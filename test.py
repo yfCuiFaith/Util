@@ -31,7 +31,7 @@ def GetMCC(tp, tn, fp, fn):
 	else:
 		return 0.0
 
-def Assess(pred, rw):
+def Assess(pred, rw, prefix = None):
 	TP, TN, FP, FN = Statistic(pred, rw)
 	print('TP = %6d TN = %6d FP = %6d FN = %6d' % (TP, TN, FP, FN))
 	
@@ -42,4 +42,8 @@ def Assess(pred, rw):
 		(precision * 100.0, sensitivity * 100.0, specificity * 100.0))
 	
 	MCC = GetMCC(TP, TN, FP, FN)
-	print('MCC = %.3f' % (MCC))
+
+	if(prefix is None):
+		print('MCC = %.3f' % (MCC))
+	else:
+		print('%s/MCC = %.3f' % (prefix, MCC))
