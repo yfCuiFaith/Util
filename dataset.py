@@ -223,9 +223,9 @@ class SeqDataSet:
 			buf[i] = list(buf[i].strip())
 			for j in range(len(buf[i])):
 				if(buf[i][j] == '0'):
-					buf[i][j] = ['1', '0']
+					buf[i][j] = [1.0, 0.0]
 				else:
-					buf[i][j] = ['0', '1']
+					buf[i][j] = [0.0, 1.0] 
 		
 		return buf
 
@@ -239,6 +239,21 @@ class SeqDataSet:
 			print('###DataError!###')
 		else:
 			self.number = len(self.label)
+
+	def Fill(self, src_seqs, filler):
+		seqs_lens = [len(seq) for seq in src_seqs]
+
+		batch_size = len(src_seqs)
+
+		max_len = max(seqs_lens)
+
+		dest_seqs = []
+		for i in range(0, batch_size):
+			pad_size = max_len - seqs_lens[i]
+			dest_seqs.append(src_seqs[i] + \
+				[filler for j in range(pad_size)])
+		
+		return dest_seqs, seqs_lens
 
 	def NextBatch(self, batch_size = 1):
 		feature_batch = None
@@ -266,14 +281,31 @@ class SeqDataSet:
 		
 		return feature_batch, label_batch
 
+	def NextPaddingBatch(self, batch_size = 1):
+		batch_x, batch_y = self.NextBatch(batch_size)
+
+		batch_x, len_x = self.Fill(batch_x, 0.0)
+		batch_y, len_y = self.Fill(batch_y, [0.0, 0.0])
+
+		return batch_x, batch_y, len_x, len_y
+
 	def SetSignal(self):
 		self.avail_num = self.number
 
+	# |dataset| % batch_size doesn't have to be 0
 	def NextRestrictedBatch(self, batch_size = 1):
 		if(self.avail_num > 0):
+			batch_size = min(self.avail_num, batch_size)
 			self.avail_num -= batch_size
-			return self.NextBatch()
+			return self.NextBatch(batch_size)
 		return [None, None]
+
+	def NextRestrictedPaddingBatch(self, batch_size = 1):
+		if(self.avail_num > 0):
+			batch_size = min(self.avail_num, batch_size)
+			self.avail_num -= batch_size
+			return self.NextPaddingBatch(batch_size)
+		return [None, None, None, None]
 
 	def EntireBatch(self):
 		return self.feature, self.label
